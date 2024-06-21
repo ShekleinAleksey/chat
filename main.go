@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"text/template"
 
 	"github.com/gorilla/websocket"
 )
@@ -42,6 +41,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var users = make(map[ConnectUser]int)
+
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	ws, _ := upgrader.Upgrade(w, r, nil)
 
@@ -53,4 +54,21 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Client connected:", ws.RemoteAddr().String())
 
+	var socketClient *ConnectUser = newConnectUser(ws, ws.RemoteAddr().String())
+	users[*socketClient] = 0
+	log.Println("Number client connected ...", len(users))
+
+	messageType, message, err := ws.ReadMessage()
+	if err != nil {
+		log.Println("Ws disconnect waiting", err.Error())
+		delete(users, *socketClient)
+		log.Println("Number of client still connected ...", len(users))
+		return
+	}
+
+	for client := range users {
+		if err = client.websocket.WriteMessage(messageType, message); err != nil {
+			log.Println("Cloud not send Message to ", client.ClientIP, err.Error())
+		}
+	}
 }
