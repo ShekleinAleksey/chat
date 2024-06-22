@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -58,17 +60,24 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	users[*socketClient] = 0
 	log.Println("Number client connected ...", len(users))
 
-	messageType, message, err := ws.ReadMessage()
-	if err != nil {
-		log.Println("Ws disconnect waiting", err.Error())
-		delete(users, *socketClient)
-		log.Println("Number of client still connected ...", len(users))
-		return
-	}
+	for {
+		messageType, message, err := ws.ReadMessage()
+		if err != nil {
+			log.Println("Ws disconnect waiting", err.Error())
+			delete(users, *socketClient)
+			log.Println("Number of client still connected ...", len(users))
+			return
+		}
 
-	for client := range users {
-		if err = client.websocket.WriteMessage(messageType, message); err != nil {
-			log.Println("Cloud not send Message to ", client.ClientIP, err.Error())
+		t := time.Now().Format("2006-01-02 15:04:05")
+		timestamp := []byte(" <" + t + ">: ")
+		message = bytes.Join([][]byte{timestamp, message}, nil)
+
+		for client := range users {
+			if err = client.websocket.WriteMessage(messageType, message); err != nil {
+				log.Println("Cloud not send Message to ", client.ClientIP, err.Error())
+			}
 		}
 	}
+
 }
