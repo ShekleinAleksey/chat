@@ -2,4 +2,9 @@ module chat
 
 go 1.21.6
 
-require github.com/gorilla/websocket v1.5.3 // indirect
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gorilla/websocket v1.5.3
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
+)
